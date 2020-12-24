@@ -2,8 +2,7 @@
 // Created by Mikhail on 24.12.2020.
 //
 
-#ifndef THREADPOOL_THREADMANAGER_H
-#define THREADPOOL_THREADMANAGER_H
+#pragma once
 
 #include <thread>
 #include <vector>
@@ -23,4 +22,4 @@ public:
 private:
     std::vector<std::thread>& threads;
 };
-#endif //THREADPOOL_THREADMANAGER_H
+

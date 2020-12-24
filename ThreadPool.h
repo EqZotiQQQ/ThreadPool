@@ -2,8 +2,7 @@
 // Created by Mikhail on 24.12.2020.
 //
 
-#ifndef THREADPOOL_THREADPOOL_H
-#define THREADPOOL_THREADPOOL_H
+#pragma once
 
 #include <thread>
 #include <vector>
@@ -17,14 +16,20 @@ class ThreadPool {
 public:
     ThreadPool();
 
+    template<class Functor>//, class... Args>
+    void submit(Functor f) {
+        std::cout <<"submit\n";
+        queue.push(f);
+    }
 private:
     std::vector<std::thread> threads;
     std::queue<std::function<void()>> queue;
     ThreadManager thread_manager;
     bool done;
 
+/*====================== Methods ======================*/
+
     void work();
 };
 
 
-#endif //THREADPOOL_THREADPOOL_H
