@@ -15,7 +15,6 @@ public:
         for(auto& thread: threads) {
             if(thread.joinable()) {
                 thread.join();
-                std::cout <<"thread destroyed\n";
             }
         }
     }
