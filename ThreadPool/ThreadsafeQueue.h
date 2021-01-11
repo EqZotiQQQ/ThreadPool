@@ -2,8 +2,8 @@
 // Created by Mikhail on 09.01.2021.
 //
 
-#ifndef THREADPOOL_STACKSAFEQUEUE_H
-#define THREADPOOL_STACKSAFEQUEUE_H
+#ifndef THREADPOOL_THREADSAFEQUEUE_H
+#define THREADPOOL_THREADSAFEQUEUE_H
 
 #include <thread>
 #include <mutex>
@@ -11,14 +11,14 @@
 #include <queue>
 
 template<class T>
-class ThreadsafeQueueV2 {
+class ThreadsafeQueue {
 private:
     std::queue<std::shared_ptr<T>> data;
     mutable std::mutex mtx;
     std::condition_variable cv;
-    std::atomic<int> size;
+    std::atomic<int> size;  // can keep int, cuz of all actions under guards
 public:
-    ThreadsafeQueueV2():size(0) {}
+    ThreadsafeQueue():size(0) {}
 
     void push(T new_value) {
         std::shared_ptr<T> sptr(std::make_shared<T>(std::move(new_value)));
@@ -78,4 +78,4 @@ public:
     }
 };
 
-#endif //THREADPOOL_STACKSAFEQUEUE_H
+#endif //THREADPOOL_THREADSAFEQUEUE_H

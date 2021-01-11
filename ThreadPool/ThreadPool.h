@@ -15,12 +15,11 @@
 
 #include "ThreadManager.h"
 #include "FunctionWrapper.h"
-#include "StacksafeQueue.h"
+#include "ThreadsafeQueue.h"
 
 class ThreadPool {
     using task = std::function<void()>;
 public:
-
     explicit ThreadPool() :
             thread_manager(threads),
             cv(std::condition_variable{}),
@@ -29,20 +28,24 @@ public:
             free_threads(hw_threads) {
         for (unsigned i { 0 }; i < hw_threads; i++) {
             threads.emplace_back(&ThreadPool::work, this, i);
+            threads_free.push_back(true);
         }
     }
 
-    inline bool get_thread_availability() const {
-        bool a = std::any_of(threads_free.cbegin(), threads_free.cend(), [](const auto& element){ return !element.second;});
-        return a;
-    };
+    inline bool is_threads_free() const {
+        std::mutex mutex;
+        std::lock_guard l(mutex);
+        for(const bool thread_free : threads_free) {
+            if (thread_free == false) {
+                return false;
+            }
+        }
+        return queue.empty();
+    }
 
     void wait_until_task_finished() {
         while(true) {
-            if(!get_thread_availability()) {
-                for(const auto& i: threads_free) {
-                    printf("thread available? = %d\n",i.second);
-                }
+            if (is_threads_free()) {
                 return;
             }
         }
@@ -52,38 +55,32 @@ public:
 
     void finish() { finish_jobs.store(true); }
 
-    int get_free_threads_cnt() const { return free_threads; }
-
 private:
-    inline static thread_local bool thread_busy = false;
-    
     std::vector<std::thread> threads;
+    std::vector<bool> threads_free;
 
-    ThreadsafeQueueV2<task> queue;
+    ThreadsafeQueue<task> queue;
     ThreadManager thread_manager;
     const unsigned hw_threads;
     std::atomic<unsigned> free_threads;
     std::atomic<bool> finish_jobs{false};
     std::condition_variable cv;
-    std::mutex m;
-    std::map<int, bool> threads_free;
 
 
     void work(int thread_number) {
-        threads_free[thread_number] = true;
-        while(!finish_jobs.load()) {
+        while(!finish_jobs.load()) {            // we work while no signal from main thread to finish
             task action;
-            if (queue.try_pop(action)) {
-                ThreadPool::thread_busy = true;
+            if (queue.try_pop(action)) {    //queue contains things
+                threads_free[thread_number] = false;
                 action();
-            } else {
-                ThreadPool::thread_busy = false;
+                threads_free[thread_number] = true;
+            } else {                            // queue is empty
+                if(queue.empty()) {  // if no tasks in queue we notify the conveyor in main thread
+                    cv.notify_all();
+                    std::this_thread::yield();      // let control to another thread
+                }
             }
-            threads_free[thread_number] = ThreadPool::thread_busy;
-            if(get_thread_availability()) {
-                cv.notify_all();
-                std::this_thread::yield();
-            }
+
         }
     }
 };

@@ -1,0 +1,10 @@
+Release
+Debug
+x64
+x86
+*.dll
+.vs
+.idea
+cmake-build-debug
+opencv_world450.lib
+opencv_world450d.lib
