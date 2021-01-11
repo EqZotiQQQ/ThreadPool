@@ -1,49 +1,41 @@
-#include <iostream>
 #include <thread>
-#include <optional>
+#include <future>
+#include <condition_variable>
 
 #include "ThreadManager.h"
 #include "ThreadPool.h"
 #include "FunctionWrapper.h"
 
-void func1()             {std::cout<<"func1()\n";}
-int  func2(int j, int s) {std::cout<<"func2(j:i32,s:i32)\n";return j;}
-
-struct bar {
-    int x, y;
-    bar(int x,int y) :x(x),y(y){}
-    int operator()(){
-        std::cout<<"ope()\n";
-        return x+y;
-    }
-};
+void func1() {
+    std::this_thread::sleep_for(std::chrono::milliseconds(60));
+    printf("func1()\n");
+}
+void func2(int j, int &s) {
+    std::this_thread::sleep_for(std::chrono::milliseconds (60));
+    s = j;
+    printf("func2()\n");
+}
 
 int main() {
+    for(int i = 0; i < 2; i++) {
+        printf("=================================\n");
+        ThreadPool tp;
+        int ret = 1;
 
+        tp.submit([&]() { func2(5, ret); });
+        tp.wait_until_task_finished();
 
+        printf("1. Main thread ret = {%d}; should be {5}\n", ret);
 
+        std::this_thread::sleep_for(std::chrono::seconds(1));
 
-    /*FunctionWrapper fw1(func1);
-    FunctionWrapper fw2(func2);
-    ThreadPool tp;
-    tp.submit(fw1);
-    tp.submit([&](){   fw2(5, 5);   });
-    for (int i = 0; i < 10; ++i) {
-        tp.submit(fw1);
-        tp.submit([&](){   fw2(rand(), rand());  });
+        tp.submit([&]() { func2(37, ret); });
+        tp.wait_until_task_finished();
+
+        printf("2. Main thread ret = {%d}; should be {37}\n", ret);
+
+        tp.finish();
+        printf("+++++++++++++++++++++++++++++++++++++\n");
     }
-
-    std::this_thread::sleep_for(std::chrono::seconds(2));
-    printf("++++++++++++++++++++++\n\n");
-    for (int i = 0; i < 10; ++i) {
-        tp.submit(fw1);
-        tp.submit([&](){   fw2(rand(), rand());  });
-    }*/
-    /*ThreadPool tp;
-    tp.submit([](){foo();});
-
-    bar br(5,5);
-    tp.submit(br);
-    tp.submit([&](){br();});*/
     return 0;
 }

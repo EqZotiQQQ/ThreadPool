@@ -10,55 +10,80 @@
 #include <functional>
 #include <iostream>
 #include <optional>
+#include <atomic>
+#include <map>
 
 #include "ThreadManager.h"
-
+#include "FunctionWrapper.h"
+#include "StacksafeQueue.h"
 
 class ThreadPool {
+    using task = std::function<void()>;
 public:
-    ThreadPool() :
+
+    explicit ThreadPool() :
             thread_manager(threads),
-            done(false) {
-        const unsigned hw_threads = std::thread::hardware_concurrency();
-        for (unsigned i = 0; i < hw_threads; i++) {
-            threads.push_back(std::thread(&ThreadPool::work, this));
+            cv(std::condition_variable{}),
+            hw_threads(1),
+            //hw_threads(std::thread::hardware_concurrency()) {
+            free_threads(hw_threads) {
+        for (unsigned i { 0 }; i < hw_threads; i++) {
+            threads.emplace_back(&ThreadPool::work, this, i);
         }
     }
 
-    void submit(std::function<void()> f) {
-        std::cout <<"submit\n";
-        queue.push(f);
+    inline bool get_thread_availability() const {
+        bool a = std::any_of(threads_free.cbegin(), threads_free.cend(), [](const auto& element){ return !element.second;});
+        return a;
+    };
+
+    void wait_until_task_finished() {
+        while(true) {
+            if(!get_thread_availability()) {
+                for(const auto& i: threads_free) {
+                    printf("thread available? = %d\n",i.second);
+                }
+                return;
+            }
+        }
     }
 
+    void submit(task f) { queue.push(f); }
+
+    void finish() { finish_jobs.store(true); }
+
+    int get_free_threads_cnt() const { return free_threads; }
+
 private:
+    inline static thread_local bool thread_busy = false;
+    
     std::vector<std::thread> threads;
-    std::queue<std::function<void()>> queue;
-    //std::queue<std::function<RetType()>> queue; would be good
+
+    ThreadsafeQueueV2<task> queue;
     ThreadManager thread_manager;
-    bool done;
+    const unsigned hw_threads;
+    std::atomic<unsigned> free_threads;
+    std::atomic<bool> finish_jobs{false};
+    std::condition_variable cv;
+    std::mutex m;
+    std::map<int, bool> threads_free;
 
-/*====================== Methods ======================*/
 
-    void work() {
-        std::cout << "work??\n";
-        try {
-            while (!done) {
-                //std::cout << "thread id = " << std::this_thread::get_id() << std::endl;
-                //std::this_thread::sleep_for(std::chrono::seconds(1));
-                // TODO replace with selfmade threadsafe queue
-                if (!queue.empty()) {
-                    std::cout << "work\t" << std::this_thread::get_id() << std::endl;
-                    auto func = queue.front();
-                    queue.pop();
-                    func();
-                } else {
-                    std::this_thread::yield();
-                }
+    void work(int thread_number) {
+        threads_free[thread_number] = true;
+        while(!finish_jobs.load()) {
+            task action;
+            if (queue.try_pop(action)) {
+                ThreadPool::thread_busy = true;
+                action();
+            } else {
+                ThreadPool::thread_busy = false;
             }
-        } catch (...) {
-
+            threads_free[thread_number] = ThreadPool::thread_busy;
+            if(get_thread_availability()) {
+                cv.notify_all();
+                std::this_thread::yield();
+            }
         }
     }
 };
-
-

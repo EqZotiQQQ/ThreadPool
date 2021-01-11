@@ -5,41 +5,32 @@
 #pragma once
 
 #include <tuple>
-#include <iostream>
+#include <optional>
 #include <any>
 
-template<typename... Args>
-class FunctionWrapperSTL {
-public:
-    FunctionWrapperSTL(std::function<std::any()> f, std::tuple<Args...>&& args):
-            f(std::move(f)),
-            args(std::forward(args)){
-        printf("fw: args cnt: %d",sizeof...(Args));
-    }
-    auto operator()(Args... args) {
-        return f(args...);
-    }
-private:
-    std::tuple<Args...> args;
-    std::function<std::any(std::tuple<Args...>)> f;
-};
 
+
+#if 0
+// TODO make it workable
 template<typename Function, typename... Args>
-class FunctionWrapperTemplate {
+class FunctionWrapper {
 public:
-
-    FunctionWrapperTemplate(Function&& func, Args&&... args):
-            f(std::forward(func)),
-            args(std::forward(args)...){
-        printf("fw: args cnt: %d",sizeof...(args));
+    FunctionWrapper(Function f, std::optional<std::tuple<Args...>>&& arguments = std::nullopt):
+            f(f) {
+        if (arguments.has_value()) {
+            args = std::move(arguments.value());
+        } else {
+            args = {};
+        }
     }
-    auto operator()(Args... args) {
-        return f(args...);
+    std::any operator()() {
+        return std::apply(f, args);
     }
 private:
     Function f;
     std::tuple<Args...> args;
-    std::function<std::any()> func;
 };
 
+//invoke_result?
 
+#endif

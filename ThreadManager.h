@@ -6,10 +6,10 @@
 
 #include <thread>
 #include <vector>
+#include <utility>
 
 class ThreadManager {
 public:
-    ThreadManager() = delete;
     ThreadManager(std::vector<std::thread>& threads):threads(threads) {}
     ~ThreadManager() {
         for(auto& thread: threads) {
