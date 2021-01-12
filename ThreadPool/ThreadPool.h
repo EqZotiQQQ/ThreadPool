@@ -16,9 +16,9 @@ class ThreadPool {
     using task = std::function<void()>;
 public:
     explicit ThreadPool() :
+            hw_threads(1),
+            threads_free(std::vector(hw_threads, 1)),
             thread_manager(threads) {
-        hw_threads = 1;
-        threads_free = std::vector(hw_threads, 1);
         for (unsigned i { 0 }; i < hw_threads; i++) {
             threads.emplace_back(&ThreadPool::work, this, i);
         }
