@@ -27,7 +27,7 @@ public:
     {
         for(unsigned i = 0; i < hw_threads; ++i)
         {
-            threads.emplace_back(&ThreadPool::processor, this, i);
+            threads.emplace_back(&ThreadPool::processor, this);
         }
     }
 
@@ -46,7 +46,7 @@ public:
     }
 
 private:
-    void processor(const int thread_number) {
+    void processor() {
         while(!stop) {
             std::function<void()> task;
             if(queue.try_pop(task)) {

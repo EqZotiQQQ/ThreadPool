@@ -1,7 +1,7 @@
 #include <cassert>
 
-#include "ThreadManager.h"
-#include "ThreadPool.h"
+#include "headers/ThreadManager.h"
+#include "headers/ThreadPool.h"
 
 void func1() {
     std::this_thread::sleep_for(std::chrono::milliseconds(60));
