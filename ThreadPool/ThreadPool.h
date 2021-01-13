@@ -3,10 +3,7 @@
 #include <thread>
 #include <vector>
 #include <functional>
-#include <iostream>
 #include <atomic>
-#include <cassert>
-#include <future>
 
 #include "ThreadManager.h"
 #include "ThreadsafeQueue.h"
