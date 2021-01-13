@@ -1,9 +1,4 @@
-//
-// Created by Mikhail on 09.01.2021.
-//
-
-#ifndef THREADPOOL_THREADSAFEQUEUE_H
-#define THREADPOOL_THREADSAFEQUEUE_H
+#pragma once
 
 #include <thread>
 #include <mutex>
@@ -77,5 +72,3 @@ public:
         return size;
     }
 };
-
-#endif //THREADPOOL_THREADSAFEQUEUE_H
