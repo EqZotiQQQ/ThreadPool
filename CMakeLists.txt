@@ -1,14 +1,37 @@
 cmake_minimum_required(VERSION 3.16)
+
 project(ThreadPool)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++2a")
 
 find_package(Threads REQUIRED)
 
-set(headers 
+set(HEADERS
         headers/ThreadPool.h
         headers/ThreadManager.h
         headers/ThreadsafeQueue.h)
 
-add_executable(ThreadPool main.cpp headers)
-target_link_libraries(${PROJECT_NAME} Threads::Threads)
+set(SOURCES src/ThreadPool.cpp)
+
+include_directories(
+        ${CMAKE_CURRENT_SOURCE_DIR}
+        ${CMAKE_CURRENT_SOURCE_DIR}/headers
+)
+
+set(CMAKE_CXX_CPPCHECK "cppcheck")
+
+find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck)
+
+if (CMAKE_CXX_CPPCHECK)
+    list(
+            APPEND CMAKE_CXX_CPPCHECK
+            "--enable=warning"
+            "--inconclusive"
+            "--force"
+            "--inline-suppr"
+    )
+endif()
+
+add_library(ThreadPool STATIC ${HEADERS} ${SOURCES})
+
+target_link_libraries(ThreadPool Threads::Threads)
