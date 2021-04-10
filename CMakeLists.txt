@@ -18,6 +18,15 @@ include_directories(
         ${CMAKE_CURRENT_SOURCE_DIR}/headers
 )
 
+add_library(ThreadPool STATIC ${HEADERS} ${SOURCES})
+
+target_link_libraries(ThreadPool PUBLIC Threads::Threads)
+
+
+
+
+
+
 set(CMAKE_CXX_CPPCHECK "cppcheck")
 
 find_program(CMAKE_CXX_CPPCHECK NAMES cppcheck)
@@ -31,7 +40,3 @@ if (CMAKE_CXX_CPPCHECK)
             "--inline-suppr"
     )
 endif()
-
-add_library(ThreadPool STATIC ${HEADERS} ${SOURCES})
-
-target_link_libraries(ThreadPool Threads::Threads)
